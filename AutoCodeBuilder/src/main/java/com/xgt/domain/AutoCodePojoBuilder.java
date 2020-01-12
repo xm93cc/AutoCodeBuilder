@@ -6,7 +6,9 @@ QDebug
 2020/1/10 16:10
 *******
 */
+
 import java.io.File;
+import java.io.FileOutputStream;
 import java.sql.*;
 import java.util.*;
 
@@ -14,8 +16,6 @@ import java.util.*;
  * @author QDebug
  */
 public class AutoCodePojoBuilder {
-    private static String property = System.getProperty("user.dir")+"\\src\\main\\java\\"+AutoCodePojoBuilder.class.getPackage().getName().replace('.','\\')+"\\";
-
 
     /**
      * get tables
@@ -26,7 +26,7 @@ public class AutoCodePojoBuilder {
      * @param password        密码
      * @return DataSource
      */
-    public static void getTableInfos(String driverClassPath, String jdbcUrl, String username, String password,boolean isHump,String pojoDirName) throws Exception {
+    public static void getTableInfos(String driverClassPath, String jdbcUrl, String username, String password, boolean isHump, String pojoPackageName, boolean isLomBox) throws Exception {
         if (driverClassPath == null || jdbcUrl == null || username == null || password == null) {
             throw new RuntimeException("jdbc pram Missing!");
         }
@@ -40,57 +40,119 @@ public class AutoCodePojoBuilder {
         List<String> ta = new ArrayList();
         //得到所有表信息
         while (show_tables.next()) {
-
             for (int i = 1; i <= columnCount; i++) {
                 ta.add((String) show_tables.getObject(i));
             }
-
         }
-
-
         for (String desc : ta) {
+            Map<String, String> stringStringMap=new HashMap<String, String>(6);
+            StringBuffer classContent = new StringBuffer();
+            StringBuffer getSet=new StringBuffer();
+            StringBuffer classHead = new StringBuffer(AutoCodePojoBuilder.class.getPackage() + "." + pojoPackageName + ";\n");
+            if (isLomBox) {
+                classContent = new StringBuffer("\nimport lombok.Data;\n\n@Data");
+            }/*else
+            {
+                classContent=new StringBuffer(AutoCodePojoBuilder.class.getPackage()+"."+pojoDirName+";\n");
+            }*/
             String sql = "desc " + desc;
             ResultSet resultSet = statement.executeQuery(sql);
             ResultSetMetaData data = resultSet.getMetaData();
-            if (data==null)
-            {
-                System.out.println("table name:"+desc+" error!");
+            if (data == null) {
+                System.out.println("table name:" + desc + " error!");
                 continue;
             }
-            File file = new File(pojoDirName);
-            if(file.isDirectory())
-            {
-                String[] className = desc.split("_");
-                StringBuffer newt=new StringBuffer();
-                reName(className, newt);
-                newt.append(".java");
-                File classFile=new File(file.getPath()+newt.toString());
-
-
+            File file = new File("./");
+            String path = file.getCanonicalPath() + "\\src\\main\\java\\" + AutoCodePojoBuilder.class.getPackage().getName().replace(".", "\\") + "\\" + pojoPackageName;
+            File file1 = new File(path);
+            File classFile = null;
+            if (file1.isDirectory()) {
+                System.out.println("存在");
+                classFile = getClassFile(desc, classContent, file1);
+                if (!classFile.isFile()) {
+                    classFile.createNewFile();
+                } else {
+                    continue;
+                }
+            } else {
+                System.out.println("不存在");
+                file1.mkdirs();
+                classFile = getClassFile(desc, classContent, file1);
+                classFile.createNewFile();
             }
             StringBuffer sb = new StringBuffer();
             while (resultSet.next()) {
                 String type = resultSet.getString("Type");
-                Map<String,String> typeMap=getDataBaseDataType();
+                Map<String, String> typeMap = getDataBaseDataType();
                 //TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT
                 Set<String> strings = typeMap.keySet();
                 for (String string : strings) {
-                    if(type.contains(string))
-                    {
-                        toCode(isHump, resultSet, sb,typeMap.get(string));
-                    }
+                    if (type.contains(string)) {
+                        if (typeMap.get(string).equals("BigDecimal")) {
+                            classHead.append("\nimport java.math.BigDecimal;");
+                        } else if (typeMap.get(string).equals("Date")) {
+                            classHead.append("\nimport java.util.Date;");
+                        }
+                        stringStringMap.putAll(toCode(isHump, resultSet, sb, typeMap.get(string), isLomBox));
 
+                        break;
+                    }
+                }
+            }
+            classContent.append(sb.toString() );
+            classHead.append(classContent.toString());
+            if(stringStringMap!=null)
+            {
+                Set<String> strings = stringStringMap.keySet();
+                for (String string : strings) {
+                    String toUp = toUp(string);
+                    getSet.append("\n\tpublic "+stringStringMap.get(string)+ " get"+toUp+"()\n \t{ return "+string+";  }\n" +
+                            "\n" +
+                            "\tpublic void set"+toUp+"("+stringStringMap.get(string)+" " +string+") \n\t{\n" +
+                            "        this."+string+ "=" +string+";\n" +
+                            "    }\n\n");
                 }
 
 
             }
+            FileOutputStream fos = new FileOutputStream(classFile);
+            if(!isLomBox)
+            {
 
-            System.out.println(sb.toString());
+                fos.write(classHead.append(getSet.toString()+"\n}").toString().getBytes());
+            }else
+            {
 
-
+                fos.write(classHead.append("\n}").toString().getBytes());
+            }
+            fos.close();
         }
+    }
+
+    private static String toUp(String to){
+        if(to==null)
+        {
+            return null;
+        }
+        char[] chars1 = to.toCharArray();
+        if ((((int) chars1[0]) - 32) <= 90 && (((int) chars1[0]) - 32) >= 65) {
+            chars1[0] = (char) (((int) chars1[0]) - 32);
+        }
+        return new String(chars1);
+
+    }
 
 
+
+    private static File getClassFile(String desc, StringBuffer classContent, File file1) {
+        File classFile;
+        String[] className = desc.split("_");
+        StringBuffer newt = new StringBuffer();
+        reName(className, newt);
+        classContent.append("\npublic class " + newt + "{\n");
+        newt.append(".java");
+        classFile = new File(file1.getPath() + "\\" + newt.toString());
+        return classFile;
     }
 
     private static void reName(String[] className, StringBuffer newt) {
@@ -104,14 +166,14 @@ public class AutoCodePojoBuilder {
     }
 
     private static Map<String, String> getDataBaseDataType() {
-        Map<String, String> typeMap=new HashMap<String, String>(6);
-        typeMap.put("int","Integer");
-        typeMap.put("tinyint","Integer");
-        typeMap.put("smallint","Integer");
-        typeMap.put("mediumint","Integer");
-        typeMap.put("bigint","Integer");
-        typeMap.put("float","Float");
-        typeMap.put("double","Double");
+        Map<String, String> typeMap = new HashMap<String, String>(6);
+        typeMap.put("int", "Integer");
+        typeMap.put("tinyint", "Integer");
+        typeMap.put("smallint", "Integer");
+        typeMap.put("mediumint", "Integer");
+        typeMap.put("bigint", "Integer");
+        typeMap.put("float", "Float");
+        typeMap.put("double", "Double");
         typeMap.put("decimal", "BigDecimal");
         typeMap.put("varchar", "String");
         typeMap.put("char", "String");
@@ -120,41 +182,58 @@ public class AutoCodePojoBuilder {
         return typeMap;
     }
 
-    private static void toCode(boolean isHump, ResultSet resultSet, StringBuffer sb,String dataType) throws SQLException {
+    private static Map<String,String> toCode(boolean isHump, ResultSet resultSet, StringBuffer sb, String dataType,boolean isLomBox) throws SQLException {
+         Map<String,String> map=null;
+        if(!isLomBox)
+        {
+            map=new HashMap<String, String>(6);
+        }
         String field = resultSet.getString("Field");
         String[] s = field.split("_");
-        if (isHump)
-        {
 
-            if(s.length==1)
-            {
-                sb.append("private "+dataType +s[0]+";\n");
-            }else
-            {
-                StringBuffer newt=new StringBuffer(s[0]);
+        if (isHump) {
+
+            if (s.length == 1) {
+                sb.append("\tprivate " + dataType + " " + s[0] + ";\n");
+                if(map!=null)
+                {
+                    map.put(s[0],dataType);
+                }
+            } else if (s.length > 1) {
+                StringBuffer newt = new StringBuffer(s[0]);
                 reName(s, newt);
-                sb.append("private "+dataType +"  "+newt.toString()+";\n");
+                sb.append("\tprivate " + dataType + "  " + newt.toString() + ";\n");
+                if(map!=null)
+                {
+                    map.put(newt.toString(),dataType);
+                }
             }
 
 
-        }else
-        {
-            sb.append("private "+dataType +"  "+s[0]+";\n");
+        } else {
+            sb.append("\tprivate " + dataType + "  " + s[0] + ";\n");
+            if(map!=null)
+            {
+                map.put(s[0],dataType);
+            }
         }
+    return map;
     }
 
 
-
-
-
     public static void main(String[] args) throws Exception {
-     getTableInfos(
-             "com.mysql.jdbc.Driver",
-             "jdbc:mysql://localhost:3306/health?characterEncoding=UTF-8",
-             "root",
-             "123",
-             true,
-             "pojo");
+        getTableInfos(
+                "com.mysql.jdbc.Driver",
+                "jdbc:mysql://localhost:3306/health?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC",
+                "root",
+                "123",
+                true,
+                "bean",
+                false);
+        // StringBuffer classContent=new StringBuffer(AutoCodePojoBuilder.class.getPackage()+".pojo"+";\npublic class "+"Checkgroup"+"{\n"+"}");
+        // System.out.println(classContent.toString());
+
+
     }
 
 }
