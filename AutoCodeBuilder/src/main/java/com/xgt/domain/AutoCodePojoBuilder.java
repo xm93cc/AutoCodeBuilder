@@ -45,9 +45,9 @@ public class AutoCodePojoBuilder {
             }
         }
         for (String desc : ta) {
-            Map<String, String> stringStringMap=new HashMap<String, String>(6);
+            Map<String, String> stringStringMap = new HashMap<String, String>(6);
             StringBuffer classContent = new StringBuffer();
-            StringBuffer getSet=new StringBuffer();
+            StringBuffer getSet = new StringBuffer();
             StringBuffer classHead = new StringBuffer(AutoCodePojoBuilder.class.getPackage() + "." + pojoPackageName + ";\n");
             if (isLomBox) {
                 classContent = new StringBuffer("\nimport lombok.Data;\n\n@Data");
@@ -67,7 +67,6 @@ public class AutoCodePojoBuilder {
             File file1 = new File(path);
             File classFile = null;
             if (file1.isDirectory()) {
-                System.out.println("存在");
                 classFile = getClassFile(desc, classContent, file1);
                 if (!classFile.isFile()) {
                     classFile.createNewFile();
@@ -75,7 +74,7 @@ public class AutoCodePojoBuilder {
                     continue;
                 }
             } else {
-                System.out.println("不存在");
+                System.out.println("mk package");
                 file1.mkdirs();
                 classFile = getClassFile(desc, classContent, file1);
                 classFile.createNewFile();
@@ -93,35 +92,36 @@ public class AutoCodePojoBuilder {
                         } else if (typeMap.get(string).equals("Date")) {
                             classHead.append("\nimport java.util.Date;");
                         }
-                        stringStringMap.putAll(toCode(isHump, resultSet, sb, typeMap.get(string), isLomBox));
+                        Map<String, String> stringStringMap1 = toCode(isHump, resultSet, sb, typeMap.get(string), isLomBox);
+                        if (stringStringMap1 != null) {
+
+                            stringStringMap.putAll(stringStringMap);
+                        }
 
                         break;
                     }
                 }
             }
-            classContent.append(sb.toString() );
+            classContent.append(sb.toString());
             classHead.append(classContent.toString());
-            if(stringStringMap!=null)
-            {
+            if (stringStringMap != null) {
                 Set<String> strings = stringStringMap.keySet();
                 for (String string : strings) {
                     String toUp = toUp(string);
-                    getSet.append("\n\tpublic "+stringStringMap.get(string)+ " get"+toUp+"()\n \t{ return "+string+";  }\n" +
+                    getSet.append("\n\tpublic " + stringStringMap.get(string) + " get" + toUp + "()\n \t{ return " + string + ";  }\n" +
                             "\n" +
-                            "\tpublic void set"+toUp+"("+stringStringMap.get(string)+" " +string+") \n\t{\n" +
-                            "        this."+string+ "=" +string+";\n" +
+                            "\tpublic void set" + toUp + "(" + stringStringMap.get(string) + " " + string + ") \n\t{\n" +
+                            "        this." + string + "=" + string + ";\n" +
                             "    }\n\n");
                 }
 
 
             }
             FileOutputStream fos = new FileOutputStream(classFile);
-            if(!isLomBox)
-            {
+            if (!isLomBox) {
 
-                fos.write(classHead.append(getSet.toString()+"\n}").toString().getBytes());
-            }else
-            {
+                fos.write(classHead.append(getSet.toString() + "\n}").toString().getBytes());
+            } else {
 
                 fos.write(classHead.append("\n}").toString().getBytes());
             }
@@ -129,9 +129,8 @@ public class AutoCodePojoBuilder {
         }
     }
 
-    private static String toUp(String to){
-        if(to==null)
-        {
+    private static String toUp(String to) {
+        if (to == null) {
             return null;
         }
         char[] chars1 = to.toCharArray();
@@ -141,7 +140,6 @@ public class AutoCodePojoBuilder {
         return new String(chars1);
 
     }
-
 
 
     private static File getClassFile(String desc, StringBuffer classContent, File file1) {
@@ -182,11 +180,10 @@ public class AutoCodePojoBuilder {
         return typeMap;
     }
 
-    private static Map<String,String> toCode(boolean isHump, ResultSet resultSet, StringBuffer sb, String dataType,boolean isLomBox) throws SQLException {
-         Map<String,String> map=null;
-        if(!isLomBox)
-        {
-            map=new HashMap<String, String>(6);
+    private static Map<String, String> toCode(boolean isHump, ResultSet resultSet, StringBuffer sb, String dataType, boolean isLomBox) throws SQLException {
+        Map<String, String> map = null;
+        if (!isLomBox) {
+            map = new HashMap<String, String>(6);
         }
         String field = resultSet.getString("Field");
         String[] s = field.split("_");
@@ -195,31 +192,27 @@ public class AutoCodePojoBuilder {
 
             if (s.length == 1) {
                 sb.append("\tprivate " + dataType + " " + s[0] + ";\n");
-                if(map!=null)
-                {
-                    map.put(s[0],dataType);
+                if (map != null) {
+                    map.put(s[0], dataType);
                 }
             } else if (s.length > 1) {
                 StringBuffer newt = new StringBuffer(s[0]);
                 reName(s, newt);
                 sb.append("\tprivate " + dataType + "  " + newt.toString() + ";\n");
-                if(map!=null)
-                {
-                    map.put(newt.toString(),dataType);
+                if (map != null) {
+                    map.put(newt.toString(), dataType);
                 }
             }
 
 
         } else {
             sb.append("\tprivate " + dataType + "  " + s[0] + ";\n");
-            if(map!=null)
-            {
-                map.put(s[0],dataType);
+            if (map != null) {
+                map.put(s[0], dataType);
             }
         }
-    return map;
+        return map;
     }
-
 
     public static void main(String[] args) throws Exception {
         getTableInfos(
@@ -229,11 +222,7 @@ public class AutoCodePojoBuilder {
                 "123",
                 true,
                 "bean",
-                false);
-        // StringBuffer classContent=new StringBuffer(AutoCodePojoBuilder.class.getPackage()+".pojo"+";\npublic class "+"Checkgroup"+"{\n"+"}");
-        // System.out.println(classContent.toString());
-
-
+                true);
     }
 
 }
