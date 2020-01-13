@@ -17,14 +17,17 @@ import java.util.*;
  */
 public class AutoCodePojoBuilder {
 
+
     /**
-     * get tables
-     *
-     * @param driverClassPath 驱动包
-     * @param jdbcUrl         连接url
-     * @param username        用户名
-     * @param password        密码
-     * @return DataSource
+     * create tables map pojo class
+     * @param driverClassPath databases driver
+     * @param jdbcUrl   jdbc url
+     * @param username database username
+     * @param password database password
+     * @param isHump code name is hump
+     * @param pojoPackageName  pojo Package Name
+     * @param isLomBox is lom box style
+     * @throws Exception
      */
     public static void getTableInfos(String driverClassPath, String jdbcUrl, String username, String password, boolean isHump, String pojoPackageName, boolean isLomBox) throws Exception {
         if (driverClassPath == null || jdbcUrl == null || username == null || password == null) {
