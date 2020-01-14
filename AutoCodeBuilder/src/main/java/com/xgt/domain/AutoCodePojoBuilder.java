@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.*;
 import java.util.*;
+import java.util.zip.Deflater;
 
 /**
  * @author QDebug
@@ -29,7 +30,7 @@ public class AutoCodePojoBuilder {
      * @param isLomBox is lom box style
      * @throws Exception
      */
-    public static void getTableInfos(String driverClassPath, String jdbcUrl, String username, String password, boolean isHump, String pojoPackageName, boolean isLomBox) throws Exception {
+    public static void getTableInfos(String driverClassPath, String jdbcUrl, String username, String password, boolean isHump, String pojoPackageName, boolean isLomBox, String user) throws Exception {
         if (driverClassPath == null || jdbcUrl == null || username == null || password == null) {
             throw new RuntimeException("jdbc pram Missing!");
         }
@@ -53,12 +54,18 @@ public class AutoCodePojoBuilder {
             StringBuffer getSet = new StringBuffer();
             StringBuffer classHead = new StringBuffer(AutoCodePojoBuilder.class.getPackage() + "." + pojoPackageName + ";\n");
             if (isLomBox) {
-                classContent = new StringBuffer("\nimport lombok.Data;\n\n@Data");
+                if(user==null)
+                {
+                    user="admin";
+                }
+                classContent = new StringBuffer("\nimport lombok.Data;\n /**\n * @author "+user+"\n */\n@Data");
+                System.out.println(classContent.toString());
             }/*else
             {
                 classContent=new StringBuffer(AutoCodePojoBuilder.class.getPackage()+"."+pojoDirName+";\n");
             }*/
-            String sql = "desc " + desc;
+            String database = (jdbcUrl.split("/")[3]).split("\\?")[0];
+            String sql = "SELECT COLUMN_NAME Field, COLUMN_TYPE Type,DATA_TYPE,IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH , COLUMN_DEFAULT , COLUMN_COMMENT Info FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '"+database+"' AND  table_name ='"+desc+"';";
             ResultSet resultSet = statement.executeQuery(sql);
             ResultSetMetaData data = resultSet.getMetaData();
             if (data == null) {
@@ -70,7 +77,7 @@ public class AutoCodePojoBuilder {
             File file1 = new File(path);
             File classFile = null;
             if (file1.isDirectory()) {
-                classFile = getClassFile(desc, classContent, file1);
+                classFile = getClassFile(desc, classContent, file1,isLomBox,user);
                 if (!classFile.isFile()) {
                     classFile.createNewFile();
                 } else {
@@ -79,7 +86,7 @@ public class AutoCodePojoBuilder {
             } else {
                 System.out.println("mk package");
                 file1.mkdirs();
-                classFile = getClassFile(desc, classContent, file1);
+                classFile = getClassFile(desc, classContent, file1,isLomBox,user);
                 classFile.createNewFile();
             }
             StringBuffer sb = new StringBuffer();
@@ -145,12 +152,19 @@ public class AutoCodePojoBuilder {
     }
 
 
-    private static File getClassFile(String desc, StringBuffer classContent, File file1) {
+    private static File getClassFile(String desc, StringBuffer classContent, File file1 ,boolean isLomBok,String user) {
         File classFile;
         String[] className = desc.split("_");
         StringBuffer newt = new StringBuffer();
         reName(className, newt);
-        classContent.append("\npublic class " + newt + "{\n");
+        if(isLomBok)
+        {
+            classContent.append("\npublic class " + newt + "{\n");
+        }else
+        {
+            classContent.append("\n /**\n * @author "+user+"\n */\npublic class " + newt + "{\n");
+        }
+
         newt.append(".java");
         classFile = new File(file1.getPath() + "\\" + newt.toString());
         return classFile;
@@ -194,11 +208,13 @@ public class AutoCodePojoBuilder {
         if (isHump) {
 
             if (s.length == 1) {
+                infoNotNull(resultSet, sb);
                 sb.append("\tprivate " + dataType + " " + s[0] + ";\n");
                 if (map != null) {
                     map.put(s[0], dataType);
                 }
             } else if (s.length > 1) {
+                infoNotNull(resultSet, sb);
                 StringBuffer newt = new StringBuffer(s[0]);
                 reName(s, newt);
                 sb.append("\tprivate " + dataType + "  " + newt.toString() + ";\n");
@@ -209,6 +225,7 @@ public class AutoCodePojoBuilder {
 
 
         } else {
+            infoNotNull(resultSet, sb);
             sb.append("\tprivate " + dataType + "  " + s[0] + ";\n");
             if (map != null) {
                 map.put(s[0], dataType);
@@ -217,15 +234,30 @@ public class AutoCodePojoBuilder {
         return map;
     }
 
+    private static void infoNotNull(ResultSet resultSet, StringBuffer sb) throws SQLException {
+        String info = resultSet.getString("Info");
+        if (info != null && info.length() > 0) {
+            sb.append("\t/**\n" +
+                    "\t * " + info + "\n" +
+                    "\t */\n");
+        }
+    }
+
     public static void main(String[] args) throws Exception {
-        getTableInfos(
+      getTableInfos(
                 "com.mysql.jdbc.Driver",
                 "jdbc:mysql://localhost:3306/health?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC",
                 "root",
                 "123",
                 true,
                 "bean",
-                true);
+                true,
+                "QDebug"
+              );
+
+
     }
+
+
 
 }
