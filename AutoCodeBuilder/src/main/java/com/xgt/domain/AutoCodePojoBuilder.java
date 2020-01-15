@@ -30,7 +30,8 @@ public class AutoCodePojoBuilder {
      * @param isLomBox is lom box style
      * @throws Exception
      */
-    public static void getTableInfos(String driverClassPath, String jdbcUrl, String username, String password, boolean isHump, String pojoPackageName, boolean isLomBox, String user) throws Exception {
+    public static List<String> getTableInfos(String driverClassPath, String jdbcUrl, String username, String password, boolean isHump, String pojoPackageName, boolean isLomBox, String user) throws Exception {
+        List<String> mapperStr=new ArrayList<String>();
         if (driverClassPath == null || jdbcUrl == null || username == null || password == null) {
             throw new RuntimeException("jdbc pram Missing!");
         }
@@ -77,7 +78,7 @@ public class AutoCodePojoBuilder {
             File file1 = new File(path);
             File classFile = null;
             if (file1.isDirectory()) {
-                classFile = getClassFile(desc, classContent, file1,isLomBox,user);
+                classFile = getClassFile(desc, classContent, file1,isLomBox,user,mapperStr);
                 if (!classFile.isFile()) {
                     classFile.createNewFile();
                 } else {
@@ -86,7 +87,7 @@ public class AutoCodePojoBuilder {
             } else {
                 System.out.println("mk package");
                 file1.mkdirs();
-                classFile = getClassFile(desc, classContent, file1,isLomBox,user);
+                classFile = getClassFile(desc, classContent, file1,isLomBox,user,mapperStr);
                 classFile.createNewFile();
             }
             StringBuffer sb = new StringBuffer();
@@ -146,6 +147,8 @@ public class AutoCodePojoBuilder {
             }
             fos.close();
         }
+        return mapperStr;
+
     }
 
     private static String toUp(String to) {
@@ -161,7 +164,7 @@ public class AutoCodePojoBuilder {
     }
 
 
-    private static File getClassFile(String desc, StringBuffer classContent, File file1 ,boolean isLomBok,String user) {
+    private static File getClassFile(String desc, StringBuffer classContent, File file1 ,boolean isLomBok,String user, List<String> mapperStr ) {
         File classFile;
         String[] className = desc.split("_");
         StringBuffer newt = new StringBuffer();
@@ -173,7 +176,7 @@ public class AutoCodePojoBuilder {
         {
             classContent.append("\n /**\n * @author "+user+"\n */\npublic class " + newt + "{\n");
         }
-
+        mapperStr.add(newt.toString());
         newt.append(".java");
         classFile = new File(file1.getPath() + "\\" + newt.toString());
         return classFile;
@@ -189,6 +192,10 @@ public class AutoCodePojoBuilder {
         }
     }
 
+    /**
+     * 对应mysql和java的数据类型
+     * @return
+     */
     private static Map<String, String> getDataBaseDataType() {
         Map<String, String> typeMap = new HashMap<String, String>(6);
         typeMap.put("int", "Integer");
@@ -251,22 +258,5 @@ public class AutoCodePojoBuilder {
                     "\t */\n");
         }
     }
-
-    public static void main(String[] args) throws Exception {
-      getTableInfos(
-                "com.mysql.jdbc.Driver",
-                "jdbc:mysql://localhost:3306/springcloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC",
-                "root",
-                "123",
-                true,
-                "bean",
-                false,
-                "QDebug"
-              );
-
-
-    }
-
-
 
 }
