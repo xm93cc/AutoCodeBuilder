@@ -27,7 +27,7 @@ public class AutoCodePojoBuilder {
      * @param password database password
      * @param isHump code name is hump
      * @param pojoPackageName  pojo Package Name
-     * @param isLomBox is lom box style
+     * @param isLomBox is lomBox style
      * @throws Exception
      */
     public static List<String> getTableInfos(String driverClassPath, String jdbcUrl, String username, String password, boolean isHump, String pojoPackageName, boolean isLomBox, String user) throws Exception {
