@@ -73,55 +73,52 @@ public class AutoCodeMapperBuilder {
     }
 
     /**
-     *
-     * @param pojoPackageName pojo在当前工程的包
-     * @param createUser 创建作者
+     * @param pojoPackageName   pojo在当前工程的包
+     * @param createUser        创建作者
      * @param mapperPackageName mapper的包名
-     * @param suffix 添加后缀，默认Mapper
+     * @param suffix            添加后缀，默认Mapper
      * @throws Exception
      */
 
-    public static void createPojoMapperByPojoPackageName(String pojoPackageName,String createUser,String mapperPackageName,String suffix) throws Exception
-    {
-        pojoPackageName=pojoPackageName.replace(".","\\");
-        File file = new File(new File("").getCanonicalPath() + "\\src\\main\\java\\" +  pojoPackageName);
+    public static void createPojoMapperByPojoPackageName(String pojoPackageName, String createUser, String mapperPackageName, String suffix) throws Exception {
+        pojoPackageName = pojoPackageName.replace(".", "\\");
+        File file = new File(new File("").getCanonicalPath() + "\\src\\main\\java\\" + pojoPackageName);
         File[] files = file.listFiles();
-        if (suffix==null) {
-            suffix="Mapper";
+        if (suffix == null) {
+            suffix = "Mapper";
         }
-        if (mapperPackageName==null) {
-            mapperPackageName="mapper";
+        if (mapperPackageName == null) {
+            mapperPackageName = "mapper";
         }
         for (File file1 : files) {
 
-            String mapperName = file1.getName().split("\\.")[0]+suffix;
+            String mapperName = file1.getName().split("\\.")[0] + suffix;
             String path = new File("").getCanonicalPath() + "\\src\\main\\java\\" + AutoCodePojoBuilder.class.getPackage().getName().replace(".", "\\") + "\\" + mapperPackageName;
-            File mapperDir=new File(path);
+            File mapperDir = new File(path);
             if (!mapperDir.isDirectory()) {
                 mapperDir.mkdirs();
             }
-            path=path+"\\"+mapperName+".java";
+            path = path + "\\" + mapperName + ".java";
 
             String mapper = "package " + AutoCodePojoBuilder.class.getPackage().getName() + "." + mapperPackageName + ";\n" +
-                    "import " + pojoPackageName.replace("\\",".") + "." + file1.getName().split("\\.")[0] + ";\n" +
+                    "import " + pojoPackageName.replace("\\", ".") + "." + file1.getName().split("\\.")[0] + ";\n" +
                     "import tk.mybatis.mapper.common.Mapper;\n" +
                     "\n" +
                     "/**\n" +
                     " * @author " + createUser + "\n" +
                     " */\n" +
-                    "public interface " + mapperName + " extends Mapper<" +  file1.getName().split("\\.")[0]  + "> {\n" +
+                    "public interface " + mapperName + " extends Mapper<" + file1.getName().split("\\.")[0] + "> {\n" +
                     "}";
-            File classPath=new File(path);
-            if (classPath.exists())
-            {
+            File classPath = new File(path);
+            if (classPath.exists()) {
                 continue;
             }
-            FileOutputStream fos=new FileOutputStream(classPath);
+            FileOutputStream fos = new FileOutputStream(classPath);
             fos.write(mapper.getBytes());
             fos.close();
 
         }
-        pojoPackageName.replace(".","\\");
+        pojoPackageName.replace(".", "\\");
 
     }
 

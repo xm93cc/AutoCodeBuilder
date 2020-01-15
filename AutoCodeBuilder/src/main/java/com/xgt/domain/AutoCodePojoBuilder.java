@@ -21,17 +21,18 @@ public class AutoCodePojoBuilder {
 
     /**
      * create tables map pojo class
+     *
      * @param driverClassPath databases driver
-     * @param jdbcUrl   jdbc url
-     * @param username database username
-     * @param password database password
-     * @param isHump code name is hump
-     * @param pojoPackageName  pojo Package Name
-     * @param isLomBox is lomBox style
+     * @param jdbcUrl         jdbc url
+     * @param username        database username
+     * @param password        database password
+     * @param isHump          code name is hump
+     * @param pojoPackageName pojo Package Name
+     * @param isLomBox        is lomBox style
      * @throws Exception
      */
     public static List<String> getTableInfos(String driverClassPath, String jdbcUrl, String username, String password, boolean isHump, String pojoPackageName, boolean isLomBox, String user) throws Exception {
-        List<String> mapperStr=new ArrayList<String>();
+        List<String> mapperStr = new ArrayList<String>();
         if (driverClassPath == null || jdbcUrl == null || username == null || password == null) {
             throw new RuntimeException("jdbc pram Missing!");
         }
@@ -55,18 +56,17 @@ public class AutoCodePojoBuilder {
             StringBuffer getSet = new StringBuffer();
             StringBuffer classHead = new StringBuffer(AutoCodePojoBuilder.class.getPackage() + "." + pojoPackageName + ";\n");
             if (isLomBox) {
-                if(user==null)
-                {
-                    user="admin";
+                if (user == null) {
+                    user = "admin";
                 }
-                classContent = new StringBuffer("\nimport lombok.Data;\n /**\n * @author "+user+"\n */\n@Data");
+                classContent = new StringBuffer("\nimport lombok.Data;\n /**\n * @author " + user + "\n */\n@Data");
                 System.out.println(classContent.toString());
             }/*else
             {
                 classContent=new StringBuffer(AutoCodePojoBuilder.class.getPackage()+"."+pojoDirName+";\n");
             }*/
             String database = (jdbcUrl.split("/")[3]).split("\\?")[0];
-            String sql = "SELECT COLUMN_NAME Field, COLUMN_TYPE Type,DATA_TYPE,IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH , COLUMN_DEFAULT , COLUMN_COMMENT Info FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '"+database+"' AND  table_name ='"+desc+"';";
+            String sql = "SELECT COLUMN_NAME Field, COLUMN_TYPE Type,DATA_TYPE,IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH , COLUMN_DEFAULT , COLUMN_COMMENT Info FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '" + database + "' AND  table_name ='" + desc + "';";
             ResultSet resultSet = statement.executeQuery(sql);
             ResultSetMetaData data = resultSet.getMetaData();
             if (data == null) {
@@ -78,7 +78,7 @@ public class AutoCodePojoBuilder {
             File file1 = new File(path);
             File classFile = null;
             if (file1.isDirectory()) {
-                classFile = getClassFile(desc, classContent, file1,isLomBox,user,mapperStr);
+                classFile = getClassFile(desc, classContent, file1, isLomBox, user, mapperStr);
                 if (!classFile.isFile()) {
                     classFile.createNewFile();
                 } else {
@@ -87,7 +87,7 @@ public class AutoCodePojoBuilder {
             } else {
                 System.out.println("mk package");
                 file1.mkdirs();
-                classFile = getClassFile(desc, classContent, file1,isLomBox,user,mapperStr);
+                classFile = getClassFile(desc, classContent, file1, isLomBox, user, mapperStr);
                 classFile.createNewFile();
             }
             StringBuffer sb = new StringBuffer();
@@ -99,14 +99,12 @@ public class AutoCodePojoBuilder {
                 for (String string : strings) {
                     if (type.contains(string)) {
                         if (typeMap.get(string).equals("BigDecimal")) {
-                            if(!classHead.toString().contains("java.math.BigDecimal"))
-                            {
+                            if (!classHead.toString().contains("java.math.BigDecimal")) {
 
                                 classHead.append("\nimport java.math.BigDecimal;");
                             }
                         } else if (typeMap.get(string).equals("Date")) {
-                            if(!classHead.toString().contains("java.util.Date"))
-                            {
+                            if (!classHead.toString().contains("java.util.Date")) {
                                 classHead.append("\nimport java.util.Date;");
                             }
 
@@ -164,17 +162,15 @@ public class AutoCodePojoBuilder {
     }
 
 
-    private static File getClassFile(String desc, StringBuffer classContent, File file1 ,boolean isLomBok,String user, List<String> mapperStr ) {
+    private static File getClassFile(String desc, StringBuffer classContent, File file1, boolean isLomBok, String user, List<String> mapperStr) {
         File classFile;
         String[] className = desc.split("_");
         StringBuffer newt = new StringBuffer();
         reName(className, newt);
-        if(isLomBok)
-        {
+        if (isLomBok) {
             classContent.append("\npublic class " + newt + "{\n");
-        }else
-        {
-            classContent.append("\n /**\n * @author "+user+"\n */\npublic class " + newt + "{\n");
+        } else {
+            classContent.append("\n /**\n * @author " + user + "\n */\npublic class " + newt + "{\n");
         }
         mapperStr.add(newt.toString());
         newt.append(".java");
@@ -194,6 +190,7 @@ public class AutoCodePojoBuilder {
 
     /**
      * 对应mysql和java的数据类型
+     *
      * @return
      */
     private static Map<String, String> getDataBaseDataType() {
