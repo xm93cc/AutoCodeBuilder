@@ -98,14 +98,22 @@ public class AutoCodePojoBuilder {
                 for (String string : strings) {
                     if (type.contains(string)) {
                         if (typeMap.get(string).equals("BigDecimal")) {
-                            classHead.append("\nimport java.math.BigDecimal;");
+                            if(!classHead.toString().contains("java.math.BigDecimal"))
+                            {
+
+                                classHead.append("\nimport java.math.BigDecimal;");
+                            }
                         } else if (typeMap.get(string).equals("Date")) {
-                            classHead.append("\nimport java.util.Date;");
+                            if(!classHead.toString().contains("java.util.Date"))
+                            {
+                                classHead.append("\nimport java.util.Date;");
+                            }
+
                         }
                         Map<String, String> stringStringMap1 = toCode(isHump, resultSet, sb, typeMap.get(string), isLomBox);
                         if (stringStringMap1 != null) {
 
-                            stringStringMap.putAll(stringStringMap);
+                            stringStringMap.putAll(stringStringMap1);
                         }
 
                         break;
@@ -118,7 +126,8 @@ public class AutoCodePojoBuilder {
                 Set<String> strings = stringStringMap.keySet();
                 for (String string : strings) {
                     String toUp = toUp(string);
-                    getSet.append("\n\tpublic " + stringStringMap.get(string) + " get" + toUp + "()\n \t{ return " + string + ";  }\n" +
+                    getSet.append("\n\tpublic " + stringStringMap.get(string) + " get" + toUp + "()\n \t{ \n\treturn " + string + "; \n \t" +
+                            "}\n" +
                             "\n" +
                             "\tpublic void set" + toUp + "(" + stringStringMap.get(string) + " " + string + ") \n\t{\n" +
                             "        this." + string + "=" + string + ";\n" +
@@ -246,12 +255,12 @@ public class AutoCodePojoBuilder {
     public static void main(String[] args) throws Exception {
       getTableInfos(
                 "com.mysql.jdbc.Driver",
-                "jdbc:mysql://localhost:3306/health?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC",
+                "jdbc:mysql://localhost:3306/springcloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC",
                 "root",
                 "123",
                 true,
                 "bean",
-                true,
+                false,
                 "QDebug"
               );
 
