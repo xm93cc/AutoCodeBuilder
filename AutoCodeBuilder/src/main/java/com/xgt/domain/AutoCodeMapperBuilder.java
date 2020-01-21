@@ -1,4 +1,5 @@
-package com.xgt.domain;/*
+package com.xgt.domain;
+/*
 *******
 QDebug
 *******
